@@ -75,6 +75,7 @@ class TFRecordExporter:
             for lod in range(self.resolution_log2 - 1):
                 tfr_file = self.tfr_prefix + '-r%02d.tfrecords' % (self.resolution_log2 - lod)
                 self.tfr_writers.append(tf.python_io.TFRecordWriter(tfr_file, tfr_opt))
+        #print(img.shape,self.shape)
         assert img.shape == self.shape
         for lod, tfr_writer in enumerate(self.tfr_writers):
             if lod:
@@ -501,7 +502,8 @@ def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
 
 def create_from_images(tfrecord_dir, image_dir, shuffle):
     print('Loading images from "%s"' % image_dir)
-    image_filenames = sorted(glob.glob(os.path.join(image_dir, '*')))
+    image_filenames = sorted(glob.glob(os.path.join(image_dir, '*/*')))
+    print('number of images=',len(image_filenames))
     if len(image_filenames) == 0:
         error('No input images found')
 
@@ -518,12 +520,24 @@ def create_from_images(tfrecord_dir, image_dir, shuffle):
     with TFRecordExporter(tfrecord_dir, len(image_filenames)) as tfr:
         order = tfr.choose_shuffled_order() if shuffle else np.arange(len(image_filenames))
         for idx in range(order.size):
-            img = np.asarray(PIL.Image.open(image_filenames[order[idx]]))
+            #print('fname=',image_filenames[order[idx]])
+            img = PIL.Image.open(image_filenames[order[idx]])
+            img_arr = np.asarray(img)
             if channels == 1:
-                img = img[np.newaxis, :, :] # HW => CHW
+                img_arr = img_arr[np.newaxis, :, :] # HW => CHW
             else:
-                img = img.transpose([2, 0, 1]) # HWC => CHW
-            tfr.add_image(img)
+                #print(img.getbands())
+                if img.mode == 'CMYK':
+                    print('fixing CMYK image=',image_filenames[order[idx]])
+                    img = img.convert('RGB')
+                    img_arr = np.asarray(img)
+                elif len(img.getbands()) == 1: # grayscale image
+                    print('fixing grayscale image=',image_filenames[order[idx]])
+                    rgbimg = PIL.Image.new("RGB", img.size)
+                    rgbimg.paste(img)
+                    img_arr = np.asarray(rgbimg)                    
+                img_arr = img_arr.transpose([2, 0, 1]) # HWC => CHW
+            tfr.add_image(img_arr)
 
 #----------------------------------------------------------------------------
 
