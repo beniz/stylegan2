@@ -33,7 +33,7 @@ _valid_configs = [
 
 #----------------------------------------------------------------------------
 
-def run(dataset, data_dir, result_dir, config_id, num_gpus, total_kimg, gamma, mirror_augment, metrics, resume_pkl, resume_kimg):
+def run(dataset, data_dir, result_dir, config_id, num_gpus, total_kimg, gamma, mirror_augment, metrics, resume_pkl, resume_kimg, lr, batch_size):
     train     = EasyDict(run_func_name='training.training_loop.training_loop') # Options for training loop.
     G         = EasyDict(func_name='training.networks_stylegan2.G_main')       # Options for generator network.
     D         = EasyDict(func_name='training.networks_stylegan2.D_stylegan2')  # Options for discriminator network.
@@ -55,8 +55,8 @@ def run(dataset, data_dir, result_dir, config_id, num_gpus, total_kimg, gamma, m
     train.resume_kimg = resume_kimg #5814.3
     train.resume_time = 0.0
     
-    sched.G_lrate_base = sched.D_lrate_base = 0.002
-    sched.minibatch_size_base = 32
+    sched.G_lrate_base = sched.D_lrate_base = lr #0.002
+    sched.minibatch_size_base = batch_size #32
     sched.minibatch_gpu_base = 4
     D_loss.gamma = 10
     metrics = [metric_defaults[x] for x in metrics]
@@ -175,7 +175,9 @@ def main():
     parser.add_argument('--metrics', help='Comma-separated list of metrics or "none" (default: %(default)s)', default='fid50k', type=_parse_comma_sep)
     parser.add_argument('--resume-pkl', help='Path to model pkl to resume from', default=None)
     parser.add_argument('--resume-kimg', help='Number of images / steps to resume from', default=0.0, type=float)
-
+    parser.add_argument('--lr', help='Base learning rate', default=0.002, type=float)
+    parser.add_argument('--batch-size', help='Minibatch size', default=32, type=int)
+    
     args = parser.parse_args()
 
     if not os.path.exists(args.data_dir):
