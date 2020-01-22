@@ -33,7 +33,7 @@ _valid_configs = [
 
 #----------------------------------------------------------------------------
 
-def run(dataset, data_dir, result_dir, config_id, num_gpus, total_kimg, gamma, mirror_augment, metrics, resume_pkl, resume_kimg, lr, batch_size):
+def run(dataset, data_dir, result_dir, config_id, num_gpus, total_kimg, gamma, mirror_augment, metrics, resume_pkl, resume_kimg, lr, batch_size, prefix):
     train     = EasyDict(run_func_name='training.training_loop.training_loop') # Options for training loop.
     G         = EasyDict(func_name='training.networks_stylegan2.G_main')       # Options for generator network.
     D         = EasyDict(func_name='training.networks_stylegan2.D_stylegan2')  # Options for discriminator network.
@@ -60,7 +60,10 @@ def run(dataset, data_dir, result_dir, config_id, num_gpus, total_kimg, gamma, m
     sched.minibatch_gpu_base = 4
     D_loss.gamma = 10
     metrics = [metric_defaults[x] for x in metrics]
-    desc = 'stylegan2'
+    desc_prefix = prefix
+    if prefix:
+        prefix += '-'
+    desc = prefix + 'stylegan2'
 
     desc += '-' + dataset
     dataset_args = EasyDict(tfrecord_dir=dataset)
@@ -177,6 +180,7 @@ def main():
     parser.add_argument('--resume-kimg', help='Number of images / steps to resume from', default=0.0, type=float)
     parser.add_argument('--lr', help='Base learning rate', default=0.002, type=float)
     parser.add_argument('--batch-size', help='Minibatch size', default=32, type=int)
+    parser.add_argument('--prefix',help='prefix to result directory name')
     
     args = parser.parse_args()
 
