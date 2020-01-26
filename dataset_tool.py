@@ -76,6 +76,9 @@ class TFRecordExporter:
                 tfr_file = self.tfr_prefix + '-r%02d.tfrecords' % (self.resolution_log2 - lod)
                 self.tfr_writers.append(tf.python_io.TFRecordWriter(tfr_file, tfr_opt))
         #print(img.shape,self.shape)
+        if img.shape != self.shape:
+            print(img.shape,self.shape)
+            return
         assert img.shape == self.shape
         for lod, tfr_writer in enumerate(self.tfr_writers):
             if lod:
@@ -502,7 +505,7 @@ def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
 
 def create_from_images(tfrecord_dir, image_dir, shuffle):
     print('Loading images from "%s"' % image_dir)
-    image_filenames = sorted(glob.glob(os.path.join(image_dir, '*/*')))
+    image_filenames = sorted(glob.glob(os.path.join(image_dir, '*')))
     print('number of images=',len(image_filenames))
     if len(image_filenames) == 0:
         error('No input images found')
